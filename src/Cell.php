@@ -2,42 +2,78 @@
 
 namespace Maatwebsite\Excel;
 
-interface Cell
+use PhpOffice\PhpSpreadsheet\RichText\RichText;
+use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use PhpOffice\PhpSpreadsheet\Cell\Cell as SpreadsheetCell;
+
+class Cell
 {
-    /**
-     * @return string
-     */
-    public function __toString();
+    use DelegatedMacroable;
 
     /**
-     * @return string
+     * @var SpreadsheetCell
      */
-    public function getCoordinate(): string;
+    private $cell;
 
     /**
-     * @return string
+     * @param SpreadsheetCell $cell
      */
-    public function getColumn(): string;
+    public function __construct(SpreadsheetCell $cell)
+    {
+        $this->cell = $cell;
+    }
 
     /**
-     * @return int
+     * @param Worksheet $worksheet
+     * @param string    $coordinate
+     *
+     * @throws \PhpOffice\PhpSpreadsheet\Exception
+     * @return Cell
      */
-    public function getRow(): int;
+    public static function make(Worksheet $worksheet, string $coordinate)
+    {
+        return new static($worksheet->getCell($coordinate));
+    }
 
     /**
+     * @return SpreadsheetCell
+     */
+    public function getDelegate(): SpreadsheetCell
+    {
+        return $this->cell;
+    }
+
+    /**
+     * @param null $nullValue
+     * @param bool $calculateFormulas
+     * @param bool $formatData
+     *
      * @return mixed
      */
-    public function getValue();
+    public function getValue($nullValue = null, $calculateFormulas = false, $formatData = true)
+    {
+        $value = $nullValue;
+        if ($this->cell->getValue() !== null) {
+            if ($this->cell->getValue() instanceof RichText) {
+                $value = $this->cell->getValue()->getPlainText();
+            } else {
+                if ($calculateFormulas) {
+                    $value = $this->cell->getCalculatedValue();
+                } else {
+                    $value = $this->cell->getValue();
+                }
+            }
 
-    /**
-     * @param mixed $value
-     *
-     * @return Cell
-     */
-    public function setValue($value): Cell;
+            if ($formatData) {
+                $style = $this->cell->getWorksheet()->getParent()->getCellXfByIndex($this->cell->getXfIndex());
+                $value = NumberFormat::toFormattedString(
+                    $value,
+                    ($style && $style->getNumberFormat()) ? $style->getNumberFormat()->getFormatCode() : NumberFormat::FORMAT_GENERAL
+                );
+            }
+        }
 
-    /**
-     * @return Cell
-     */
-    public function removeValue(): Cell;
+        return $value;
+    }
 }

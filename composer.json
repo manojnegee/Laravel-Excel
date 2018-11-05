@@ -1,11 +1,10 @@
 {
   "name": "maatwebsite/excel",
-  "description": "An eloquent way of importing and exporting Excel and CSV",
-  "license": "LGPL",
+  "description": "Supercharged Excel exports and imports in Laravel",
+  "license": "MIT",
   "keywords": [
     "laravel",
     "php",
-    "spout",
     "phpspreadsheet",
     "phpexcel",
     "excel",
@@ -16,19 +15,21 @@
   ],
   "authors": [
     {
-      "name": "Maatwebsite.nl",
+      "name": "Patrick Brouwers",
       "email": "patrick@maatwebsite.nl"
     }
   ],
   "require": {
-    "php": ">=7.0",
-    "phpoffice/phpspreadsheet": "dev-develop"
+    "php": "^7.0",
+    "phpoffice/phpspreadsheet": "^1.4",
+    "illuminate/support": "5.5.* || 5.6.* || 5.7.*"
   },
   "require-dev": {
-    "phpunit/phpunit": "~6.2",
-    "illuminate/support": "5.*",
-    "illuminate/filesystem": "5.*",
-    "codeclimate/php-test-reporter": "^0.4.4"
+    "phpunit/phpunit": "^7.0",
+    "mockery/mockery": "^1.1",
+    "orchestra/testbench": "^3.6",
+    "orchestra/database": "^3.6",
+    "predis/predis": "^1.1"
   },
   "autoload": {
     "psr-4": {
@@ -40,21 +41,13 @@
       "Maatwebsite\\Excel\\Tests\\": "tests/"
     }
   },
-  "scripts": {
-    "test": [
-      "@php vendor/bin/phpunit"
-    ],
-    "coverage": [
-      "@php -dzend_extension=xdebug.so vendor/bin/phpunit --coverage-html=tests/_data/tmp/coverage"
-    ]
-  },
   "extra": {
     "laravel": {
       "providers": [
-        "Maatwebsite\\Excel\\Bridge\\Laravel\\ExcelServiceProvider"
+        "Maatwebsite\\Excel\\ExcelServiceProvider"
       ],
       "aliases": {
-        "Excel": "Maatwebsite\\Excel\\Bridge\\Laravel\\Facades\\Excel"
+        "Excel": "Maatwebsite\\Excel\\Facades\\Excel"
       }
     }
   }

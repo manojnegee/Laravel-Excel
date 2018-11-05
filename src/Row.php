@@ -2,81 +2,85 @@
 
 namespace Maatwebsite\Excel;
 
-use Iterator;
-use Countable;
-use ArrayAccess;
-use IteratorAggregate;
+use Illuminate\Support\Collection;
+use PhpOffice\PhpSpreadsheet\Worksheet\Row as SpreadsheetRow;
 
-interface Row extends IteratorAggregate, Countable, ArrayAccess
+class Row
 {
-    /**
-     * @param string $column
-     *
-     * @return \Maatwebsite\Excel\Drivers\PhpSpreadsheet\Row
-     */
-    public function setStartColumn(string $column);
+    use DelegatedMacroable;
 
     /**
-     * @param string $column
-     *
-     * @return \Maatwebsite\Excel\Drivers\PhpSpreadsheet\Row
+     * @var array
      */
-    public function setEndColumn(string $column);
+    protected $headingRow = [];
 
     /**
-     * @param string $column
-     *
-     * @return Cell
+     * @var SpreadsheetRow
      */
-    public function cell(string $column): Cell;
+    private $row;
 
     /**
-     * @param string|null $startColumn
-     * @param string|null $endColumn
-     *
-     * @return Iterator|Cell[]
+     * @param SpreadsheetRow $row
+     * @param array          $headingRow
      */
-    public function cells(string $startColumn = 'A', string $endColumn = null);
+    public function __construct(SpreadsheetRow $row, array $headingRow = [])
+    {
+        $this->row        = $row;
+        $this->headingRow = $headingRow;
+    }
 
     /**
+     * @return SpreadsheetRow
+     */
+    public function getDelegate(): SpreadsheetRow
+    {
+        return $this->row;
+    }
+
+    /**
+     * @param null $nullValue
+     * @param bool $calculateFormulas
+     * @param bool $formatData
+     *
+     * @return Collection
+     */
+    public function toCollection($nullValue = null, $calculateFormulas = false, $formatData = true): Collection
+    {
+        return new Collection($this->toArray($nullValue, $calculateFormulas, $formatData));
+    }
+
+    /**
+     * @param null $nullValue
+     * @param bool $calculateFormulas
+     * @param bool $formatData
+     *
      * @return array
      */
-    public function toArray(): array;
+    public function toArray($nullValue = null, $calculateFormulas = false, $formatData = true)
+    {
+        $cells = [];
+
+        $i = 0;
+        foreach ($this->row->getCellIterator() as $cell) {
+            $value = (new Cell($cell))->getValue($nullValue, $calculateFormulas, $formatData);
+
+            if (isset($this->headingRow[$i])) {
+                $cells[$this->headingRow[$i]] = $value;
+            } else {
+                $cells[] = $value;
+            }
+
+            $i++;
+        }
+
+        return $cells;
+    }
 
     /**
      * @return int
      */
-    public function getRowNumber(): int;
-
-    /**
-     * @return string
-     */
-    public function getHighestColumn(): string;
-
-    /**
-     * @param string      $startColumn
-     * @param string|null $endColumn
-     *
-     * @return Iterator
-     */
-    public function getCellIterator(string $startColumn = 'A', string $endColumn = null);
-
-    /**
-     * @return array
-     */
-    public function getHeadings(): array;
-
-    /**
-     * @param string $heading
-     *
-     * @return Cell|null
-     */
-    public function get(string $heading);
-
-    /**
-     * @param string $heading
-     *
-     * @return bool
-     */
-    public function has(string $heading): bool;
+    public function getIndex(): int
+    {
+        return $this->row->getRowIndex();
+    }
 }
